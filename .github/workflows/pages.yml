@@ -1,0 +1,36 @@
+name: Publish local fitness web app
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci && npm run setup
+        working-directory: web
+      - run: |
+          mkdir -p public/web public/models public/locales
+          cp -r web/*.html web/*.css web/*.js web/*.json web/vendor public/web/
+          cp models/pose_model.onnx public/models/
+          cp locales/zh.json public/locales/
+          echo '<meta http-equiv="refresh" content="0;url=web/">' > public/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

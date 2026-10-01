@@ -1,0 +1,651 @@
+{
+  "squat": {
+    "label": "Squat / 深蹲",
+    "view": "Side / 45 degrees",
+    "feature": "knee",
+    "required": [
+      "knee"
+    ],
+    "cycle": {
+      "low": 125,
+      "high": 145,
+      "increasing": false,
+      "states": [
+        "STAND",
+        "DOWN",
+        "BOTTOM",
+        "UP"
+      ],
+      "minimum_duration": 0.07,
+      "hysteresis": 4,
+      "timeout_seconds": 8,
+      "motion_threshold": 2,
+      "minimum_cycle": 0.4
+    },
+    "rules": [
+      [
+        "depth",
+        75,
+        110,
+        2,
+        0.3,
+        "Increase squat depth within your comfortable range"
+      ],
+      [
+        "lean",
+        0,
+        45,
+        1.5,
+        0.2,
+        "Control trunk position"
+      ],
+      [
+        "knee_asymmetry",
+        0,
+        18,
+        2,
+        0.15,
+        "Keep both legs moving together"
+      ],
+      [
+        "duration",
+        1.2,
+        8,
+        30,
+        0.2,
+        "Slow down and control the movement"
+      ],
+      [
+        "stability",
+        0,
+        15,
+        2,
+        0.15,
+        "Keep trunk motion steady"
+      ]
+    ],
+    "guide": {
+      "camera": "侧面或 45°，全身和脚踝进入画面",
+      "start": "站直，膝盖较直",
+      "target": "向后坐、屈膝下蹲",
+      "finish": "从下蹲位重新起身到站直",
+      "keypoints": "肩、髋、膝、脚踝；优先使用更清晰的一侧"
+    }
+  },
+  "pushup": {
+    "label": "Push-up / 俯卧撑",
+    "view": "Side",
+    "feature": "elbow",
+    "required": [
+      "elbow"
+    ],
+    "cycle": {
+      "low": 115,
+      "high": 145,
+      "increasing": false,
+      "states": [
+        "HIGH",
+        "DOWN",
+        "LOW",
+        "UP"
+      ],
+      "minimum_duration": 0.07,
+      "hysteresis": 4,
+      "timeout_seconds": 8,
+      "motion_threshold": 2,
+      "minimum_cycle": 0.4
+    },
+    "rules": [
+      [
+        "depth",
+        75,
+        105,
+        2,
+        0.3,
+        "Bend the elbow further with control"
+      ],
+      [
+        "body",
+        165,
+        180,
+        3,
+        0.2,
+        "Keep shoulders hips and ankles aligned"
+      ],
+      [
+        "hip_sag",
+        0,
+        0.08,
+        400,
+        0.075,
+        "Lift hips slightly to avoid sagging"
+      ],
+      [
+        "hip_pike",
+        0,
+        0.08,
+        400,
+        0.075,
+        "Lower hips slightly to avoid piking"
+      ],
+      [
+        "shoulder_travel",
+        0.2,
+        1.5,
+        110,
+        0.15,
+        "Move through a fuller range"
+      ],
+      [
+        "elbow_asymmetry",
+        0,
+        18,
+        2,
+        0.1,
+        "Keep both arms moving together"
+      ],
+      [
+        "duration",
+        1,
+        8,
+        25,
+        0.1,
+        "Lower and press with control"
+      ]
+    ],
+    "guide": {
+      "camera": "侧面，镜头放低，肩肘腕和脚踝都入镜",
+      "start": "双臂伸直、身体撑起",
+      "target": "屈肘降低身体",
+      "finish": "推起至手臂再次伸直",
+      "keypoints": "肩、肘、腕；躯干评分另看肩髋踝"
+    }
+  },
+  "plank": {
+    "label": "Plank / 平板支撑",
+    "view": "Side",
+    "feature": "body",
+    "required": [
+      "body"
+    ],
+    "rules": [
+      [
+        "body",
+        165,
+        180,
+        4,
+        0.4,
+        "Align shoulders hips and ankles"
+      ],
+      [
+        "hip_sag",
+        0,
+        0.08,
+        400,
+        0.125,
+        "Lift hips slightly to avoid sagging"
+      ],
+      [
+        "hip_pike",
+        0,
+        0.08,
+        400,
+        0.125,
+        "Lower hips slightly to avoid piking"
+      ],
+      [
+        "head",
+        155,
+        180,
+        2,
+        0.1,
+        "Keep your head in line with your torso"
+      ],
+      [
+        "hold_stability",
+        0,
+        8,
+        3,
+        0.25,
+        "Reduce hip sway"
+      ]
+    ],
+    "guide": {
+      "camera": "侧面，肩、髋、踝尽量入镜",
+      "start": "肩髋踝进入画面后开始累计时长",
+      "target": "保持身体对齐",
+      "finish": "结束本组时保存本次保持时长",
+      "keypoints": "肩、髋、踝；姿态分数与观察时长分开"
+    }
+  },
+  "lunge": {
+    "label": "Lunge / 弓步蹲",
+    "view": "Side / 45 degrees",
+    "feature": "front_knee",
+    "required": [
+      "front_knee"
+    ],
+    "cycle": {
+      "low": 125,
+      "high": 145,
+      "increasing": false,
+      "states": [
+        "STAND",
+        "LUNGE_DOWN",
+        "LUNGE_BOTTOM",
+        "LUNGE_UP"
+      ],
+      "minimum_duration": 0.07,
+      "hysteresis": 4,
+      "timeout_seconds": 8,
+      "motion_threshold": 2,
+      "minimum_cycle": 0.4
+    },
+    "rules": [
+      [
+        "depth",
+        75,
+        110,
+        2,
+        0.35,
+        "Control front-knee depth"
+      ],
+      [
+        "rear_depth",
+        70,
+        130,
+        1.5,
+        0.2,
+        "Bend your rear knee with control"
+      ],
+      [
+        "lean",
+        0,
+        35,
+        2,
+        0.25,
+        "Keep the trunk steady"
+      ],
+      [
+        "duration",
+        1,
+        8,
+        25,
+        0.2,
+        "Control the descent and ascent"
+      ]
+    ],
+    "guide": {
+      "camera": "侧面或 45°，两腿尽量可见",
+      "start": "前腿膝盖较直",
+      "target": "前腿膝盖弯曲",
+      "finish": "回到起始站姿",
+      "keypoints": "两腿髋、膝、踝；无法判断前后时估计弯曲较多的一侧"
+    }
+  },
+  "jumping_jack": {
+    "label": "Jumping Jack / 开合跳",
+    "view": "Front",
+    "feature": "jack",
+    "required": [
+      "jack"
+    ],
+    "cycle": {
+      "low": 0.28,
+      "high": 0.67,
+      "increasing": true,
+      "states": [
+        "CLOSED",
+        "OPENING",
+        "OPEN",
+        "CLOSING"
+      ],
+      "minimum_duration": 0.07,
+      "hysteresis": 0.05,
+      "timeout_seconds": 8,
+      "motion_threshold": 2,
+      "minimum_cycle": 0.4
+    },
+    "rules": [
+      [
+        "arms_top",
+        130,
+        180,
+        1.5,
+        0.25,
+        "Lift both arms high enough"
+      ],
+      [
+        "feet_top",
+        1.2,
+        2.5,
+        70,
+        0.25,
+        "Open your feet wider"
+      ],
+      [
+        "shoulder_asymmetry",
+        0,
+        18,
+        2,
+        0.2,
+        "Move both arms together"
+      ],
+      [
+        "wrist_asymmetry",
+        0,
+        0.15,
+        100,
+        0.15,
+        "Keep both arms level"
+      ],
+      [
+        "duration",
+        0.5,
+        5,
+        30,
+        0.15,
+        "Keep a steady rhythm"
+      ]
+    ],
+    "guide": {
+      "camera": "正面，全身、双手双脚都入镜",
+      "start": "双臂放下、双脚并拢",
+      "target": "双臂和双脚一起打开",
+      "finish": "双臂放下、双脚再并拢",
+      "keypoints": "双肩、双手、双髋、双脚；手脚需同时打开"
+    }
+  },
+  "glute_bridge": {
+    "label": "Glute Bridge / 臀桥",
+    "view": "Side",
+    "feature": "bridge",
+    "required": [
+      "bridge"
+    ],
+    "cycle": {
+      "low": 140,
+      "high": 158,
+      "increasing": true,
+      "states": [
+        "DOWN",
+        "LIFTING",
+        "TOP",
+        "LOWERING"
+      ],
+      "minimum_duration": 0.07,
+      "hysteresis": 4,
+      "timeout_seconds": 8,
+      "motion_threshold": 2,
+      "minimum_cycle": 0.4
+    },
+    "rules": [
+      [
+        "peak",
+        165,
+        180,
+        3,
+        0.35,
+        "Align shoulder hip and knee at the top"
+      ],
+      [
+        "knee",
+        70,
+        110,
+        1.5,
+        0.15,
+        "Check your foot placement"
+      ],
+      [
+        "hip_range",
+        0.15,
+        2.0,
+        90,
+        0.2,
+        "Lift hips through a fuller range"
+      ],
+      [
+        "top_hold",
+        0.25,
+        3,
+        75,
+        0.15,
+        "Pause briefly at the top"
+      ],
+      [
+        "duration",
+        1,
+        8,
+        25,
+        0.15,
+        "Lower hips with control"
+      ]
+    ],
+    "guide": {
+      "camera": "侧面，全身至少肩、髋、膝可见",
+      "start": "髋部在低位",
+      "target": "抬髋、肩髋膝逐渐伸展",
+      "finish": "髋部降回低位",
+      "keypoints": "肩、髋、膝；高度与顶端停留仅参与评分"
+    }
+  },
+  "crunch": {
+    "label": "Crunch / 卷腹",
+    "view": "Side",
+    "feature": "curl",
+    "required": [
+      "curl"
+    ],
+    "cycle": {
+      "low": 12,
+      "high": 25,
+      "increasing": true,
+      "states": [
+        "LYING",
+        "CURLING_UP",
+        "TOP",
+        "LOWERING"
+      ],
+      "minimum_duration": 0.07,
+      "hysteresis": 4,
+      "timeout_seconds": 8,
+      "motion_threshold": 2,
+      "minimum_cycle": 0.4
+    },
+    "rules": [
+      [
+        "peak",
+        25,
+        60,
+        2,
+        0.35,
+        "Lift shoulders in a controlled curl"
+      ],
+      [
+        "shoulder_travel",
+        0.12,
+        1.2,
+        110,
+        0.2,
+        "Lift shoulders through a fuller range"
+      ],
+      [
+        "head",
+        145,
+        180,
+        2,
+        0.15,
+        "Avoid pulling your head forward"
+      ],
+      [
+        "duration",
+        1.2,
+        8,
+        30,
+        0.3,
+        "Curl slowly and with control"
+      ]
+    ],
+    "guide": {
+      "camera": "侧面，肩、髋与头部可见",
+      "start": "躯干平卧",
+      "target": "卷起上身",
+      "finish": "肩部回到起始低位",
+      "keypoints": "肩、髋；角度是二维投影，不能判断背部着地"
+    }
+  },
+  "lateral_raise": {
+    "label": "Lateral Raise / 侧平举",
+    "view": "Front",
+    "feature": "arm_elevation",
+    "required": [
+      "arm_elevation"
+    ],
+    "cycle": {
+      "low": 25,
+      "high": 65,
+      "increasing": true,
+      "states": [
+        "DOWN",
+        "RAISING",
+        "TOP",
+        "LOWERING"
+      ],
+      "minimum_duration": 0.07,
+      "hysteresis": 4,
+      "timeout_seconds": 8,
+      "motion_threshold": 2,
+      "minimum_cycle": 0.4
+    },
+    "rules": [
+      [
+        "arms_top",
+        75,
+        105,
+        2,
+        0.35,
+        "Raise upper arms toward shoulder height"
+      ],
+      [
+        "elbow",
+        140,
+        180,
+        1.5,
+        0.15,
+        "Keep a gentle, consistent elbow bend"
+      ],
+      [
+        "shoulder_asymmetry",
+        0,
+        15,
+        2,
+        0.2,
+        "Keep both arms level"
+      ],
+      [
+        "lean",
+        0,
+        15,
+        3,
+        0.15,
+        "Avoid torso sway"
+      ],
+      [
+        "stability",
+        0,
+        12,
+        3,
+        0.15,
+        "Avoid swinging the trunk"
+      ]
+    ],
+    "guide": {
+      "camera": "正面，双肩双肘清晰",
+      "start": "双臂自然放低",
+      "target": "双臂向两侧抬起",
+      "finish": "双臂重新放低",
+      "keypoints": "双侧肩、肘、髋；评分会看双臂同步"
+    }
+  },
+  "shoulder_press": {
+    "label": "Shoulder Press / 推举",
+    "view": "Front",
+    "feature": "elbow",
+    "required": [
+      "elbow"
+    ],
+    "cycle": {
+      "low": 115,
+      "high": 145,
+      "increasing": true,
+      "states": [
+        "DOWN",
+        "PRESSING",
+        "TOP",
+        "LOWERING"
+      ],
+      "minimum_duration": 0.07,
+      "hysteresis": 4,
+      "timeout_seconds": 8,
+      "motion_threshold": 2,
+      "minimum_cycle": 0.4
+    },
+    "rules": [
+      [
+        "peak",
+        160,
+        180,
+        3,
+        0.25,
+        "Extend your elbows with control"
+      ],
+      [
+        "arms_top",
+        140,
+        180,
+        1.5,
+        0.2,
+        "Press both arms overhead"
+      ],
+      [
+        "wrist_top",
+        0.45,
+        2,
+        85,
+        0.15,
+        "Finish with wrists above shoulders"
+      ],
+      [
+        "elbow_asymmetry",
+        0,
+        15,
+        2,
+        0.15,
+        "Press both arms together"
+      ],
+      [
+        "wrist_height_asymmetry",
+        0,
+        0.18,
+        100,
+        0.1,
+        "Keep both wrists level"
+      ],
+      [
+        "lean",
+        0,
+        20,
+        3,
+        0.15,
+        "Keep your trunk upright"
+      ]
+    ],
+    "guide": {
+      "camera": "正面，双肩双肘双腕入镜",
+      "start": "肘部弯曲、双手接近肩部",
+      "target": "向上推举、逐渐伸肘",
+      "finish": "肘部重新弯回起始位置",
+      "keypoints": "双侧肩、肘、腕；左右不同步影响评分"
+    }
+  }
+}

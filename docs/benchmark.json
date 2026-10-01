@@ -1,0 +1,47 @@
+{
+  "environment": "Linux server CPU; not M2; repeated image test",
+  "results": [
+    {
+      "source_width": 640,
+      "source_height": 480,
+      "model_input": 320,
+      "runs": 50,
+      "mean_inference_ms": 21.77248686000894,
+      "p95_ms": 25.07105745011131,
+      "pose_throughput_fps": 45.92559792462213,
+      "camera_fps": null,
+      "ui_fps": null,
+      "cpu_percent_process": null,
+      "memory_mb": null,
+      "gpu_utilization": null
+    },
+    {
+      "source_width": 480,
+      "source_height": 360,
+      "model_input": 320,
+      "runs": 50,
+      "mean_inference_ms": 18.066738699999405,
+      "p95_ms": 25.89575770000465,
+      "pose_throughput_fps": 55.345167052464625,
+      "camera_fps": null,
+      "ui_fps": null,
+      "cpu_percent_process": null,
+      "memory_mb": null,
+      "gpu_utilization": null
+    },
+    {
+      "source_width": 320,
+      "source_height": 240,
+      "model_input": 320,
+      "runs": 50,
+      "mean_inference_ms": 18.326694120005413,
+      "p95_ms": 24.14875089992847,
+      "pose_throughput_fps": 54.56042237395766,
+      "camera_fps": null,
+      "ui_fps": null,
+      "cpu_percent_process": null,
+      "memory_mb": null,
+      "gpu_utilization": null
+    }
+  ]
+}

@@ -1,0 +1,2605 @@
+你现在作为本项目的“技术负责人 + 计算机视觉算法工程师 + 前端工程师 + 测试负责人”，帮助我真正完成一个可以运行、测试、展示和答辩的智能健身指导系统。
+
+项目名称：
+
+《基于实时姿态评估的多动作智能健身指导系统》
+
+英文名称：
+
+Real-Time Multi-Exercise Intelligent Fitness Coaching System Based on Human Pose Estimation
+
+本项目有一个明确技术要求：
+
+禁止使用 MediaPipe、PoseLandmarker、MediaPipe Tasks Vision 等 MediaPipe 相关方案。
+
+姿态识别必须基于：
+
+电脑本地摄像头
++
+本地人体姿态估计神经网络
++
+本地推理框架
+
+实现。
+
+摄像头视频默认不得上传服务器。
+
+整个核心识别过程必须可以在用户电脑本地完成。
+
+==================================================
+一、最终目标
+==================================================
+
+实现完整流程：
+
+电脑摄像头
+→ 视频帧获取
+→ 本地人体检测
+→ 人体关键点识别
+→ 关键点置信度过滤
+→ 时序平滑
+→ 几何特征计算
+→ 动作识别
+→ 动作阶段判断
+→ 动作计数
+→ 姿态质量评分
+→ 错误动作识别
+→ 实时反馈
+→ 语音反馈
+→ 单组训练统计。
+
+用户只需要：
+
+普通电脑
++
+普通RGB摄像头
+
+即可使用。
+
+不需要：
+
+深度摄像头
+IMU
+穿戴式设备
+云端服务器。
+
+目标设备：
+
+Apple M2 MacBook
+
+同时尽量兼容：
+
+Windows
+macOS。
+
+核心目标：
+
+摄像头显示约30 FPS。
+
+姿态模型尽量实现实时推理。
+
+==================================================
+二、核心姿态识别方案
+==================================================
+
+不要使用MediaPipe。
+
+请使用真正的本地人体姿态估计神经网络。
+
+优先采用：
+
+轻量级Pose Estimation模型
++
+ONNX Runtime
+
+作为统一推理架构。
+
+推荐技术路线：
+
+Camera
+↓
+OpenCV / Browser getUserMedia
+↓
+Pose Neural Network
+↓
+ONNX Runtime
+↓
+Human Keypoints
+↓
+Exercise Analysis
+
+姿态模型需要满足：
+
+1. 可以本地运行；
+2. 支持摄像头实时识别；
+3. 输出人体关键节点；
+4. 模型足够轻量；
+5. 可以导出ONNX；
+6. Python和浏览器尽量共用同一模型；
+7. 不依赖云端API。
+
+可以优先评估以下模型：
+
+YOLO Pose系列轻量模型
+
+例如Nano级Pose模型。
+
+或者：
+
+RTMPose
+MoveNet
+其他适合实时人体姿态估计的轻量网络。
+
+最终模型选择由实际性能决定。
+
+优先原则：
+
+实时性
+> 稳定性
+> 精度
+> 模型复杂度。
+
+不要为了使用最新模型而牺牲项目可运行性。
+
+==================================================
+三、推荐统一技术架构
+==================================================
+
+为了让Python版和网页版尽量共用相同姿态模型，优先采用：
+
+ONNX模型。
+
+桌面端：
+
+Python
+OpenCV
+NumPy
+ONNX Runtime
+psutil
+
+网页版：
+
+HTML
+CSS
+JavaScript
+Canvas API
+Web Speech API
+ONNX Runtime Web
+WebGPU / WASM
+
+网页版摄像头：
+
+navigator.mediaDevices.getUserMedia()
+
+不得使用：
+
+MediaPipe
+MediaPipe Tasks
+PoseLandmarker。
+
+==================================================
+四、姿态模型封装
+==================================================
+
+建立统一接口：
+
+PoseEstimator
+
+例如：
+
+class PoseEstimator:
+
+    load_model()
+
+    preprocess(frame)
+
+    infer(frame)
+
+    postprocess(outputs)
+
+    get_keypoints()
+
+最终统一返回：
+
+PoseResult
+
+结构类似：
+
+{
+    "bbox": [...],
+    "keypoints": [
+        {
+            "name": "left_shoulder",
+            "x": ...,
+            "y": ...,
+            "confidence": ...
+        }
+    ],
+    "person_confidence": ...
+}
+
+业务代码禁止直接依赖某个具体神经网络。
+
+必须通过：
+
+PoseEstimator
+
+接口访问。
+
+以后即使：
+
+YOLO Pose
+
+更换成：
+
+RTMPose
+
+核心动作识别代码也不需要修改。
+
+==================================================
+五、人体关键点定义
+==================================================
+
+优先统一使用：
+
+COCO 17 Keypoints。
+
+17个关键点：
+
+0 Nose
+
+1 Left Eye
+2 Right Eye
+
+3 Left Ear
+4 Right Ear
+
+5 Left Shoulder
+6 Right Shoulder
+
+7 Left Elbow
+8 Right Elbow
+
+9 Left Wrist
+10 Right Wrist
+
+11 Left Hip
+12 Right Hip
+
+13 Left Knee
+14 Right Knee
+
+15 Left Ankle
+16 Right Ankle
+
+健身动作核心使用：
+
+Shoulder
+Elbow
+Wrist
+Hip
+Knee
+Ankle
+Ear / Nose
+
+即可。
+
+不需要绘制：
+
+眼睛
+鼻子
+
+等无关节点。
+
+最终骨架UI主要显示：
+
+肩
+肘
+腕
+髋
+膝
+踝。
+
+==================================================
+六、本地摄像头
+==================================================
+
+Python版本：
+
+使用：
+
+cv2.VideoCapture()
+
+读取电脑摄像头。
+
+允许：
+
+选择Camera ID。
+
+例如：
+
+0
+1
+2。
+
+实现：
+
+自动检测可用摄像头。
+
+默认：
+
+640×480。
+
+同时支持：
+
+480×360
+320×240。
+
+摄像头读取线程与AI推理线程尽量解耦。
+
+避免模型推理导致摄像头画面严重卡顿。
+
+推荐：
+
+Camera Thread
++
+Inference Thread
++
+UI Thread。
+
+如果30FPS摄像头下AI只能推理20FPS：
+
+允许：
+
+视频保持30FPS
+
+AI每隔若干帧推理。
+
+显示最近一次姿态结果。
+
+==================================================
+七、浏览器摄像头
+==================================================
+
+网页版使用：
+
+navigator.mediaDevices.getUserMedia({
+    video: true
+})
+
+获取用户本地摄像头。
+
+然后：
+
+HTML video
+↓
+Canvas
+↓
+ONNX Runtime Web
+↓
+Pose Model
+↓
+Keypoints。
+
+优先使用：
+
+WebGPU
+
+推理。
+
+如果设备不支持：
+
+fallback to WASM。
+
+摄像头视频：
+
+不得上传。
+
+模型：
+
+下载到浏览器后本地运行。
+
+==================================================
+八、姿态模型前处理
+==================================================
+
+实现统一预处理：
+
+resize
+letterbox
+normalization
+RGB conversion
+tensor conversion。
+
+记录：
+
+scale
+padding
+
+以便将模型坐标映射回：
+
+原始摄像头坐标。
+
+不能直接把模型输入坐标画到原始画面。
+
+必须实现正确坐标反变换。
+
+==================================================
+九、姿态模型后处理
+==================================================
+
+实现：
+
+confidence threshold
+
+例如：
+
+person confidence threshold
+
+和：
+
+keypoint confidence threshold。
+
+初始建议：
+
+person：
+
+0.4左右
+
+keypoint：
+
+0.4～0.5
+
+但必须可配置。
+
+低置信度关键点：
+
+不能参与动作评分。
+
+例如：
+
+if confidence < threshold:
+
+    feature_valid = False
+
+不得：
+
+把缺失关键点当作坐标0。
+
+==================================================
+十、人体检测
+==================================================
+
+第一阶段主要支持：
+
+单人训练。
+
+如果画面检测到多人：
+
+选择：
+
+置信度最高
+
+或者：
+
+bounding box最大
+
+的人作为目标用户。
+
+UI显示：
+
+“检测到多个人，请确保训练区域内只有一人。”
+
+暂时不需要多人健身识别。
+
+==================================================
+十一、人体是否完整进入画面
+==================================================
+
+系统需要检测：
+
+关键身体节点是否进入画面。
+
+例如：
+
+肩
+髋
+膝
+踝。
+
+如果踝关节未进入画面：
+
+Squat不能正常评估。
+
+显示：
+
+“请后退，确保全身进入画面。”
+
+如果关键点置信度连续过低：
+
+暂停评分。
+
+不要输出错误动作结论。
+
+==================================================
+十二、摄像头视角
+==================================================
+
+不同动作显示不同推荐摄像机位置。
+
+Squat：
+
+侧面或45°。
+
+Push-up：
+
+侧面。
+
+Plank：
+
+侧面。
+
+Lunge：
+
+侧面或45°。
+
+Jumping Jack：
+
+正面。
+
+Lateral Raise：
+
+正面。
+
+Shoulder Press：
+
+正面。
+
+动作开始前显示：
+
+Recommended Camera View。
+
+==================================================
+十三、几何计算
+==================================================
+
+建立：
+
+geometry.py
+
+实现所有动作通用数学函数。
+
+第一：
+
+三点夹角。
+
+angle(A,B,C)
+
+其中：
+
+B为顶点。
+
+计算：
+
+BA
+BC
+
+cosθ =
+BA·BC /
+(|BA||BC|)
+
+输出：
+
+0–180°。
+
+==================================================
+十四、关节角度
+==================================================
+
+例如：
+
+膝关节角：
+
+Hip
+Knee
+Ankle。
+
+肘关节角：
+
+Shoulder
+Elbow
+Wrist。
+
+髋关节角：
+
+Shoulder
+Hip
+Knee。
+
+肩关节角：
+
+Elbow
+Shoulder
+Hip。
+
+==================================================
+十五、人体中心点
+==================================================
+
+定义：
+
+shoulder_center
+
+=
+(left_shoulder + right_shoulder) / 2
+
+hip_center
+
+=
+(left_hip + right_hip) / 2。
+
+这些点用于：
+
+躯干角度
+身体倾斜
+身体稳定性。
+
+==================================================
+十六、身体直线度
+==================================================
+
+用于：
+
+Push-up
+Plank
+Glute Bridge。
+
+不要使用：
+
+“人体与垂直线偏离多少度”
+
+评价平板支撑。
+
+应该计算：
+
+Shoulder
+Hip
+Ankle
+
+三点共线程度。
+
+例如：
+
+body_angle =
+angle(Shoulder, Hip, Ankle)
+
+理想：
+
+接近180°。
+
+或者：
+
+计算Hip到Shoulder-Ankle连线的归一化距离。
+
+实现：
+
+point_to_line_distance_normalized()
+
+用于判断：
+
+塌腰
+撅臀。
+
+==================================================
+十七、躯干角度
+==================================================
+
+使用：
+
+Shoulder Center
+Hip Center
+
+形成躯干向量。
+
+计算其相对于：
+
+垂直方向
+
+的角度。
+
+用于：
+
+Squat
+Lunge
+Shoulder Press。
+
+==================================================
+十八、左右对称性
+==================================================
+
+根据不同动作计算：
+
+left knee angle
+vs
+right knee angle。
+
+left elbow
+vs
+right elbow。
+
+left wrist height
+vs
+right wrist height。
+
+左右距离必须进行：
+
+归一化。
+
+不要直接用：
+
+pixel distance。
+
+可以使用：
+
+shoulder width
+
+或：
+
+torso length
+
+作为尺度。
+
+==================================================
+十九、时序滤波
+==================================================
+
+人体Pose模型输出会有抖动。
+
+建立：
+
+filters.py。
+
+第一版实现：
+
+Moving Average Filter。
+
+窗口：
+
+5 frames。
+
+支持：
+
+坐标
+角度
+距离
+其他feature。
+
+同时实现可选：
+
+EMA
+
+Exponential Moving Average。
+
+禁止每个动作自己写滤波。
+
+统一由：
+
+TemporalFilter
+
+模块完成。
+
+==================================================
+二十、运动速度
+==================================================
+
+计算：
+
+feature velocity。
+
+例如：
+
+angle_velocity =
+(angle_t - angle_t-1) / Δt。
+
+用于判断：
+
+DOWN
+UP
+RAISING
+LOWERING。
+
+比单纯固定阈值更加稳定。
+
+==================================================
+二十一、通用动作状态机
+==================================================
+
+这是项目的主要技术特点。
+
+建立：
+
+ExerciseStateMachine。
+
+支持配置：
+
+states
+
+transition conditions
+
+minimum state duration
+
+hysteresis
+
+timeout
+
+reset rule。
+
+例如Squat：
+
+STAND
+DOWN
+BOTTOM
+UP
+
+完整：
+
+STAND
+↓
+DOWN
+↓
+BOTTOM
+↓
+UP
+↓
+STAND
+
+完成：
+
+UP → STAND
+
+时：
+
+rep_count += 1。
+
+==================================================
+二十二、防止状态抖动
+==================================================
+
+不能：
+
+knee angle <120°
+
+立刻切状态。
+
+至少加入：
+
+Minimum Duration
+
+或：
+
+连续N帧满足条件。
+
+例如：
+
+连续3～5帧。
+
+同时使用：
+
+Hysteresis。
+
+例如：
+
+进入DOWN：
+
+knee angle < 125°
+
+恢复STAND：
+
+knee angle > 155°。
+
+避免：
+
+149
+151
+149
+151
+
+导致状态反复变化。
+
+==================================================
+二十三、状态机卡死处理
+==================================================
+
+增加：
+
+Timeout Reset。
+
+例如当前状态：
+
+DOWN
+
+持续超过3秒。
+
+并且：
+
+主要角度变化非常小。
+
+则：
+
+state_machine.reset()
+
+恢复初始状态。
+
+每个动作拥有独立：
+
+timeout_seconds
+motion_threshold。
+
+不能全部写死一个值。
+
+==================================================
+二十四、动作一：Squat
+==================================================
+
+关键点：
+
+Left/Right Shoulder
+Hip
+Knee
+Ankle。
+
+主要feature：
+
+knee angle
+hip angle
+trunk lean
+left-right symmetry
+squat depth。
+
+状态：
+
+STAND
+DOWN
+BOTTOM
+UP。
+
+评分：
+
+Depth Score
+
+Trunk Score
+
+Symmetry Score
+
+Control Score
+
+Stability Score。
+
+输出：
+
+0–100。
+
+常见问题：
+
+下蹲不足
+上身过度前倾
+左右不对称
+动作过快。
+
+注意：
+
+不要简单判断：
+
+“膝盖超过脚尖一定错误”。
+
+二维单目相机不能可靠给出这种绝对结论。
+
+==================================================
+二十五、动作二：Push-up
+==================================================
+
+关键点：
+
+Shoulder
+Elbow
+Wrist
+Hip
+Ankle。
+
+状态：
+
+HIGH
+DOWN
+LOW
+UP。
+
+主要feature：
+
+elbow angle
+
+body alignment
+
+shoulder vertical displacement
+
+symmetry。
+
+最低肘角：
+
+80–100°附近作为参考。
+
+不能使用：
+
+“胸口距离地面多少厘米”。
+
+普通摄像头无法直接准确测量。
+
+Push-up深度主要采用：
+
+elbow angle
+
+和：
+
+shoulder relative movement
+
+评价。
+
+常见错误：
+
+塌腰
+撅臀
+下降不足
+左右不对称。
+
+==================================================
+二十六、动作三：Plank
+==================================================
+
+静态动作。
+
+使用：
+
+Continuous Evaluation。
+
+不进行：
+
+Rep Counting。
+
+计算：
+
+Shoulder-Hip-Ankle alignment
+
+Hip offset
+
+Head position
+
+Stability
+
+Duration。
+
+评分：
+
+Posture Score
++
+Stability Score。
+
+Duration单独作为：
+
+训练成绩。
+
+不要：
+
+每10秒加10分。
+
+总姿态评分始终：
+
+0–100。
+
+==================================================
+二十七、动作四：Lunge
+==================================================
+
+关键点：
+
+Shoulder
+Hip
+Knee
+Ankle。
+
+状态：
+
+STAND
+LUNGE_DOWN
+LUNGE_BOTTOM
+LUNGE_UP。
+
+Feature：
+
+front knee angle
+
+rear knee angle
+
+trunk lean
+
+stability
+
+symmetry。
+
+前腿：
+
+约90°作为参考。
+
+对于：
+
+膝盖超过脚尖
+
+只能在：
+
+侧面视角
+
+作为二维近似指标。
+
+必须在系统限制中说明。
+
+==================================================
+二十八、动作五：Jumping Jack
+==================================================
+
+状态：
+
+CLOSED
+OPENING
+OPEN
+CLOSING。
+
+使用：
+
+Wrist
+Shoulder
+Hip
+Ankle。
+
+Feature：
+
+arm elevation
+
+foot distance
+
+symmetry
+
+frequency。
+
+计算：
+
+Reps/min。
+
+OPEN：
+
+手臂明显抬高
+
+同时：
+
+脚间距明显增大。
+
+==================================================
+二十九、动作六：Glute Bridge
+==================================================
+
+状态：
+
+DOWN
+LIFTING
+TOP
+LOWERING。
+
+Feature：
+
+Hip height
+
+Shoulder-Hip-Knee alignment
+
+Knee angle
+
+Top hold time
+
+Symmetry。
+
+TOP：
+
+Shoulder
+Hip
+Knee
+
+接近一条直线。
+
+==================================================
+三十、动作七：Crunch
+==================================================
+
+状态：
+
+LYING
+CURLING_UP
+TOP
+LOWERING。
+
+Feature：
+
+torso angle
+
+shoulder movement
+
+neck position
+
+speed。
+
+普通RGB摄像头无法可靠检测：
+
+“下背部是否完全贴地”。
+
+因此：
+
+不能作为绝对评分项。
+
+可以在文档中标记：
+
+Not directly observable from monocular RGB camera。
+
+==================================================
+三十一、动作八：Lateral Raise
+==================================================
+
+状态：
+
+DOWN
+RAISING
+TOP
+LOWERING。
+
+Feature：
+
+shoulder abduction angle
+
+elbow angle
+
+symmetry
+
+torso sway。
+
+不能简单：
+
+wrist > shoulder
+
+就判断动作正确。
+
+应计算：
+
+Upper Arm Angle。
+
+TOP：
+
+手臂接近肩部高度。
+
+==================================================
+三十二、动作九：Shoulder Press
+==================================================
+
+状态：
+
+DOWN
+PRESSING
+TOP
+LOWERING。
+
+Feature：
+
+elbow extension
+
+arm elevation
+
+trunk lean
+
+wrist trajectory
+
+symmetry。
+
+TOP：
+
+elbow接近完全伸展。
+
+==================================================
+三十三、评分模型
+==================================================
+
+建立统一：
+
+ScoringEngine。
+
+接口：
+
+evaluate(features)
+
+输出：
+
+{
+    total_score,
+    dimension_scores,
+    detected_errors,
+    feedback
+}
+
+每个动作定义：
+
+feature
+target
+acceptable_range
+weight。
+
+总分：
+
+Total =
+Σ wi × Si
+
+其中：
+
+Σwi = 1。
+
+尽量使用：
+
+连续评分函数。
+
+不要大量：
+
+if angle < 90:
+ score = 100
+else:
+ score = 50
+
+这种跳变方法。
+
+例如：
+
+score =
+max(
+0,
+100 - k × abs(value-target)
+)
+
+或者：
+
+Gaussian Score。
+
+==================================================
+三十四、错误检测
+==================================================
+
+每个动作拥有：
+
+ErrorDetector。
+
+Squat例如：
+
+INSUFFICIENT_DEPTH
+
+EXCESSIVE_TRUNK_LEAN
+
+ASYMMETRY
+
+UNSTABLE_MOVEMENT。
+
+每次动作完成后：
+
+选择最严重的：
+
+1–2项
+
+进行反馈。
+
+不要语音一次播放五个错误。
+
+==================================================
+三十五、语音反馈
+==================================================
+
+Python：
+
+macOS可以使用：
+
+say
+
+Windows则设计：
+
+兼容其他TTS方式。
+
+统一封装：
+
+VoiceFeedback。
+
+浏览器：
+
+Web Speech API：
+
+speechSynthesis。
+
+支持：
+
+中文
+English
+Mute。
+
+模式：
+
+Single
+
+每次动作反馈。
+
+Batch
+
+每5次总结一次。
+
+语音不得阻塞：
+
+Camera
+Inference
+UI。
+
+==================================================
+三十六、自动分组
+==================================================
+
+例如Squat：
+
+做完若干次
+
+→
+
+用户站立。
+
+如果：
+
+8–15秒
+
+没有继续动作。
+
+自动结束Set。
+
+记录：
+
+Set Number
+Reps
+Duration
+Average Score
+Best Score
+Worst Score
+Main Error。
+
+==================================================
+三十七、实时界面
+==================================================
+
+UI做成：
+
+现代
+简洁
+偏产品化。
+
+不要：
+
+OpenCV工程调试风格。
+
+主画面：
+
+摄像头。
+
+覆盖：
+
+人体骨架
+
+关键节点
+
+必要角度。
+
+侧边Dashboard：
+
+Exercise
+
+State
+
+Reps
+
+Set
+
+Current Score
+
+Average Score
+
+FPS
+
+Feedback。
+
+底部：
+
+Start
+
+Pause
+
+Reset
+
+Exercise Selector
+
+Voice
+
+Language
+
+Debug Mode。
+
+==================================================
+三十八、骨架绘制
+==================================================
+
+基于COCO节点绘制：
+
+Left Shoulder → Left Elbow → Left Wrist
+
+Right Shoulder → Right Elbow → Right Wrist
+
+Shoulder ↔ Shoulder
+
+Shoulder → Hip
+
+Hip ↔ Hip
+
+Hip → Knee → Ankle。
+
+关键点：
+
+圆点。
+
+连接：
+
+细线。
+
+不要绘制全部：
+
+Eye
+Nose
+
+等面部点。
+
+==================================================
+三十九、姿态检测Debug模式
+==================================================
+
+Debug模式显示：
+
+Bounding Box
+
+Keypoint Confidence
+
+Raw Keypoints
+
+Smoothed Keypoints
+
+Raw Angle
+
+Smoothed Angle
+
+Current State
+
+FPS
+
+Inference Time
+
+Model Input Size。
+
+正式模式：
+
+隐藏这些信息。
+
+==================================================
+四十、推理性能
+==================================================
+
+分别记录：
+
+Camera FPS
+
+Pose Inference FPS
+
+UI FPS。
+
+以及：
+
+Inference Latency。
+
+例如：
+
+Camera FPS:
+30
+
+Pose FPS:
+24
+
+Inference:
+32 ms。
+
+不要只显示一个FPS。
+
+==================================================
+四十一、性能优化
+==================================================
+
+优先方法：
+
+轻量模型
+
+降低模型input size
+
+降低Pose inference frequency
+
+Frame skipping
+
+异步推理
+
+避免重复内存申请
+
+减少UI更新。
+
+桌面版本可以采用：
+
+摄像头30FPS
+
+Pose 15–30FPS。
+
+对于健身动作识别：
+
+并不要求每一帧都运行神经网络。
+
+==================================================
+四十二、模型切换机制
+==================================================
+
+建立：
+
+models/
+
+例如：
+
+models/
+    pose_model.onnx
+
+同时建立：
+
+pose_backends/
+
+例如：
+
+base_pose.py
+onnx_pose.py。
+
+如果后期换模型：
+
+业务代码不变。
+
+只修改：
+
+pose backend。
+
+==================================================
+四十三、模型文件管理
+==================================================
+
+不要把模型路径写死。
+
+使用：
+
+config.yaml
+
+例如：
+
+pose_model:
+    path: models/pose_model.onnx
+    input_size: 640
+    confidence: 0.4
+    keypoint_confidence: 0.4
+
+camera:
+    width: 640
+    height: 480
+    fps: 30
+
+==================================================
+四十四、Python项目结构
+==================================================
+
+建议：
+
+fitness_pose_system/
+
+app.py
+
+requirements.txt
+
+README.md
+
+config.yaml
+
+models/
+    pose_model.onnx
+
+core/
+    camera.py
+    pose_estimator.py
+    pose_result.py
+    geometry.py
+    filtering.py
+    feature_extractor.py
+    state_machine.py
+    scoring.py
+    feedback.py
+    session.py
+
+pose_backends/
+    base_pose.py
+    onnx_pose.py
+
+exercises/
+    base_exercise.py
+    squat.py
+    pushup.py
+    plank.py
+    lunge.py
+    jumping_jack.py
+    glute_bridge.py
+    crunch.py
+    lateral_raise.py
+    shoulder_press.py
+
+ui/
+    renderer.py
+    dashboard.py
+
+tests/
+    test_geometry.py
+    test_filter.py
+    test_state_machine.py
+    test_scoring.py
+    benchmark.py
+
+evaluation/
+    evaluate_reps.py
+    evaluate_scores.py
+
+docs/
+
+web/
+
+==================================================
+四十五、网页版结构
+==================================================
+
+web/
+
+index.html
+
+style.css
+
+app.js
+
+camera.js
+
+poseEstimator.js
+
+onnxPose.js
+
+geometry.js
+
+filters.js
+
+stateMachine.js
+
+scoring.js
+
+feedback.js
+
+renderer.js
+
+exercises/
+
+models/
+    pose_model.onnx
+
+浏览器流程：
+
+Camera
+↓
+Video
+↓
+Canvas Frame
+↓
+ONNX Runtime Web
+↓
+Pose Keypoints
+↓
+Exercise Engine
+↓
+Canvas Skeleton
+↓
+Dashboard。
+
+==================================================
+四十六、网页版本地推理
+==================================================
+
+不得：
+
+把帧发送到Python服务器。
+
+不得：
+
+调用云端AI API。
+
+所有：
+
+pose inference
+
+在浏览器本地运行。
+
+优先：
+
+ONNX Runtime Web WebGPU。
+
+Fallback：
+
+WASM。
+
+==================================================
+四十七、实验指标
+==================================================
+
+原设计中的：
+
+“关键点检测精度≥90%”
+
+暂时删除。
+
+因为如果没有：
+
+人工标注关键点Ground Truth
+
+就不能科学计算真正的：
+
+Keypoint Detection Accuracy。
+
+改成：
+
+动作识别准确率
+
+动作计数准确率
+
+状态转移准确率
+
+错误姿态识别准确率
+
+Pose inference latency
+
+FPS。
+
+==================================================
+四十八、深蹲验证
+==================================================
+
+已有实验参考：
+
+60次动作。
+
+开始检测：
+
+58/60
+
+96.7%。
+
+结束检测：
+
+57/60
+
+95.0%。
+
+完整计数：
+
+56/60
+
+93.3%。
+
+这些结果暂时作为：
+
+Existing Reference Data。
+
+后续：
+
+新Pose模型重新测试。
+
+不得默认：
+
+更换姿态模型后这些数据仍然成立。
+
+==================================================
+四十九、Benchmark
+==================================================
+
+建立：
+
+benchmark.py。
+
+测试：
+
+640×480
+
+480×360
+
+320×240。
+
+记录：
+
+Camera FPS
+
+Pose FPS
+
+Average Inference Time
+
+CPU Usage
+
+Memory Usage。
+
+如果支持：
+
+GPU utilization。
+
+已有数据：
+
+30.1FPS
+
+等只能作为旧系统参考。
+
+新模型：
+
+必须重新真实测试。
+
+==================================================
+五十、状态机测试
+==================================================
+
+使用模拟数据：
+
+170
+165
+150
+130
+115
+100
+90
+95
+110
+130
+155
+170
+
+应判断：
+
+一个完整Squat。
+
+测试抖动：
+
+170
+149
+151
+148
+152
+150
+153
+
+不能：
+
+误计数。
+
+==================================================
+五十一、评分有效性
+==================================================
+
+未来验证：
+
+System Score
+
+vs
+
+Expert Score。
+
+目标：
+
+Pearson r > 0.85。
+
+但在没有真实专家数据之前：
+
+只能作为Target。
+
+不能写成：
+
+已经实现。
+
+建立：
+
+evaluate_scores.py。
+
+支持：
+
+Pearson
+
+Spearman
+
+MAE
+
+RMSE。
+
+==================================================
+五十二、Random Forest
+==================================================
+
+后期可以使用：
+
+RandomForestRegressor
+
+学习专家评分。
+
+features.csv例如：
+
+knee_angle
+
+hip_angle
+
+trunk_lean
+
+symmetry
+
+stability
+
+velocity
+
+expert_score。
+
+第一阶段：
+
+不要伪造训练数据。
+
+只准备：
+
+数据结构
+
+训练脚本
+
+模型接口。
+
+==================================================
+五十三、隐私
+==================================================
+
+明确：
+
+所有摄像头视频默认只在设备本地处理。
+
+不上传：
+
+照片
+
+视频
+
+人体关键点数据。
+
+不主动保存：
+
+用户训练视频。
+
+如需记录：
+
+必须用户主动开启。
+
+==================================================
+五十四、项目科学边界
+==================================================
+
+系统是：
+
+Fitness Pose Assessment System
+
+而不是：
+
+Medical Diagnosis System。
+
+不得宣称：
+
+预测运动损伤
+
+诊断疾病
+
+治疗疾病
+
+完全替代专业教练。
+
+表述：
+
+辅助动作评价
+
+实时姿态反馈
+
+训练质量分析。
+
+==================================================
+五十五、文献调研
+==================================================
+
+开发过程中自行查阅：
+
+Human Pose Estimation
+
+Exercise Recognition
+
+Biomechanics
+
+运动科学
+
+康复工程
+
+相关论文。
+
+对于：
+
+动作合理角度
+
+评价标准
+
+常见错误
+
+尽量找到可靠依据。
+
+生成：
+
+docs/references.md。
+
+==================================================
+五十六、优先开发顺序
+==================================================
+
+严格按照：
+
+Phase 1
+
+检查当前项目目录。
+
+Phase 2
+
+完成：
+
+Camera
+
+Pose Estimator
+
+ONNX inference
+
+COCO Keypoints
+
+Skeleton Renderer。
+
+首先必须做到：
+
+打开摄像头
+
+→
+
+实时看到人体节点。
+
+这是第一里程碑。
+
+Phase 3
+
+完成：
+
+Geometry
+
+Filtering
+
+Feature Extraction。
+
+Phase 4
+
+完成：
+
+Squat完整流程。
+
+包括：
+
+姿态识别
+
+状态机
+
+计数
+
+评分
+
+反馈
+
+语音
+
+分组
+
+UI。
+
+Phase 5
+
+加入：
+
+Push-up
+
+Plank
+
+Lunge。
+
+Phase 6
+
+加入：
+
+Jumping Jack
+
+Glute Bridge
+
+Crunch
+
+Lateral Raise
+
+Shoulder Press。
+
+Phase 7
+
+测试与Benchmark。
+
+Phase 8
+
+网页版迁移。
+
+Phase 9
+
+GitHub Pages。
+
+Phase 10
+
+报告与答辩资料。
+
+==================================================
+五十七、第一阶段必须先完成
+==================================================
+
+第一阶段不要急着开发9个动作。
+
+先建立一个：
+
+Pose Camera Demo。
+
+执行：
+
+python pose_camera.py
+
+应该：
+
+1. 打开电脑本地摄像头；
+
+2. 检测画面中的人；
+
+3. 在人体上实时显示：
+
+肩
+
+肘
+
+腕
+
+髋
+
+膝
+
+踝；
+
+4. 显示骨架连线；
+
+5. 显示节点confidence；
+
+6. 显示FPS；
+
+7. 不使用MediaPipe；
+
+8. 不联网进行姿态推理。
+
+该程序稳定后：
+
+再开发Squat。
+
+==================================================
+五十八、开发过程中主动修正错误
+==================================================
+
+不要机械执行我最初的所有想法。
+
+如果发现：
+
+技术不合理
+
+运动科学不严谨
+
+单目摄像头无法测量
+
+模型无法可靠检测
+
+应：
+
+修改设计
+
+并记录原因。
+
+==================================================
+五十九、项目状态管理
+==================================================
+
+建立：
+
+PROJECT_STATUS.md
+
+包含：
+
+Completed
+
+In Progress
+
+Todo
+
+Known Issues。
+
+建立：
+
+TODO.md。
+
+每个Phase完成后：
+
+运行测试
+
+并更新状态。
+
+==================================================
+六十、最终文档
+==================================================
+
+最终至少提供：
+
+README.md
+
+docs/architecture.md
+
+docs/pose_estimation.md
+
+docs/algorithm.md
+
+docs/exercise_rules.md
+
+docs/scoring.md
+
+docs/evaluation.md
+
+docs/references.md
+
+docs/web_deployment.md
+
+PROJECT_REPORT.md。
+
+==================================================
+六十一、最终系统架构
+==================================================
+
+最终系统应为：
+
+RGB Camera
+↓
+Local Pose Neural Network
+↓
+ONNX Runtime
+↓
+Human Keypoints
+↓
+Confidence Filtering
+↓
+Temporal Smoothing
+↓
+Feature Extraction
+↓
+Exercise Recognition
+↓
+State Machine
+↓
+Pose Evaluation
+↓
+Scoring
+↓
+Error Detection
+↓
+Voice + Visual Feedback。
+
+整个核心流程：
+
+100%可以在用户电脑本地完成。
+
+==================================================
+六十二、最终验收效果
+==================================================
+
+运行程序：
+
+打开电脑摄像头。
+
+用户站到摄像头前。
+
+系统自动识别：
+
+肩
+肘
+腕
+髋
+膝
+踝。
+
+选择：
+
+Squat。
+
+用户下蹲。
+
+系统显示：
+
+STAND
+
+DOWN
+
+BOTTOM
+
+UP。
+
+自动：
+
+Count +1。
+
+同时：
+
+Current Score
+
+Average Score
+
+Feedback。
+
+例如：
+
+Rep 5
+
+Score 88
+
+“下蹲深度良好，上身稍微保持直立。”
+
+然后用户切换：
+
+Push-up
+
+系统无需重启。
+
+用户选择：
+
+Plank
+
+自动进入：
+
+Continuous Evaluation Mode。
+
+==================================================
+六十三、开始执行
+==================================================
+
+现在立即开始实际开发。
+
+首先检查当前工作目录是否存在：
+
+Python代码
+
+模型
+
+README
+
+测试文件
+
+网页代码。
+
+如果没有：
+
+建立完整项目。
+
+第一目标不是：
+
+“把所有健身动作写出来”。
+
+第一目标是：
+
+成功使用电脑本地摄像头
+
++
+本地Pose神经网络
+
+实时识别人体17个关键节点。
+
+禁止使用：
+
+MediaPipe。
+
+请优先尝试：
+
+轻量级Pose模型导出ONNX
+
++
+ONNX Runtime。
+
+成功以后：
+
+保存模型推理模块。
+
+然后实现：
+
+Squat。
+
+每完成一步：
+
+实际运行
+
+测试
+
+修复错误。
+
+不要只生成代码而不验证。
+
+如果当前电脑允许访问摄像头：
+
+直接进行摄像头测试。
+
+如果工作环境无法直接访问实体摄像头：
+
+仍然完成全部代码，并额外支持：
+
+video file input
+
+用于测试。
+
+最终目标：
+
+不是概念Demo，
+
+而是可以：
+
+运行
+
+实时识别人
+
+识别人体节点
+
+识别健身动作
+
+评分
+
+反馈
+
+测试
+
+展示
+
+答辩
+
+继续扩展
+
+的完整智能健身系统。

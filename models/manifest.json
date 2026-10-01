@@ -1,0 +1,7 @@
+{
+  "architecture": "YOLOv8n-pose",
+  "input_size": 320,
+  "sha256": "4d66812ad2010fe05714d8d7515f0efd77281dbf8b19a59f673b93e70ea8507a",
+  "source": "https://github.com/ultralytics/assets",
+  "license": "Ultralytics AGPL-3.0 / enterprise; see upstream terms"
+}

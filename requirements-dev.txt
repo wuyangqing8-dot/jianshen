@@ -1,0 +1,6 @@
+-r requirements.txt
+pytest>=8,<10
+# Model regeneration only; NOT required for inference:
+# pip install ultralytics onnx
+# Expert-score training only:
+# pip install scikit-learn pandas joblib

@@ -1,0 +1,1 @@
+{"name":"form-local-coach","private":true,"type":"module","scripts":{"setup":"node setup.mjs","test":"node --test tests.mjs"},"dependencies":{"onnxruntime-web":"1.24.3"}}
