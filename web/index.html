@@ -1,8 +1,35 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FORM · 本地智能健身</title><link rel="stylesheet" href="style.css?v=20260928b"></head><body>
-<header><div class="brand">FORM<span>运动有迹可循</span></div><div class="privacy">本机处理 · 视频不上传 · 2026.09.28 校准版</div></header>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FORM · 本地智能健身</title><link rel="stylesheet" href="style.css?v=20260928b"><style>
+.ui-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:8px 16px;background:#0d0d0d;color:#eee;font-size:13px;border-bottom:1px solid #222}
+.ui-tools label{display:inline-flex;align-items:center;gap:4px}
+.ui-tools select,.ui-tools button,.ui-tools input{font-size:13px;padding:2px 4px}
+.ui-tools button{cursor:pointer;background:#222;color:#eee;border:1px solid #444;border-radius:4px;padding:3px 8px}
+.ui-tools button:hover{background:#333}
+.ui-tools input[type=range]{width:100px}
+</style></head><body>
+<header><div class="brand">FORM<span>运动有迹可循</span></div><div class="privacy">本机处理 · 视频不上传 · 2026.09.28 校准版</div>
+<div class="ui-tools" id="uiTools">
+  <label>语言 / Lang
+    <select id="uiLang">
+      <option value="zh">中文</option>
+      <option value="en">English</option>
+    </select>
+  </label>
+  <span>字体 / Font</span>
+  <button type="button" data-font="-1">A-</button>
+  <button type="button" data-font="0">A</button>
+  <button type="button" data-font="1">A+</button>
+  <label>音色 / Voice
+    <select id="ttsVoiceSelect" style="min-width:180px"></select>
+  </label>
+  <label>语速 / Speed
+    <input id="ttsRate" type="range" min="0.5" max="1.6" step="0.1" value="1">
+  </label>
+  <button type="button" id="ttsPreview">试听 / Preview</button>
+</div>
+</header>
 <main><section class="intro"><div><p class="eyebrow">YOUR PERSONAL MOVEMENT LAB</p><h1>每一次动作，都更从容。</h1><p>让关键节点可见，让训练过程可复盘。</p></div><span class="tag">研究原型 / 实验性评分</span></section>
 <div class="session-setup"><label for="cameraSelect">摄像头 <select id="cameraSelect"><option value="">系统默认摄像头</option></select></label><button id="refreshCameras" type="button">刷新设备</button><span id="cameraHint" class="muted">授权后可显示设备名称；切换摄像头会保留本组记录</span><a id="openStandalone" href="./" target="_blank" rel="noopener" hidden>在独立标签页打开摄像头</a><label for="goalInput">本组目标 <input id="goalInput" type="number" inputmode="numeric" min="1" max="3600" value="10"></label><span id="goalUnit" class="muted">次</span></div>
 <div class="workspace"><section class="stage"><video id="video" autoplay muted playsinline></video><canvas id="overlay"></canvas><div id="empty"><div class="ring">◎</div><h2>准备好，开始你的训练</h2><p>选择动作，允许摄像头访问，并让身体进入画面</p></div><div class="stage-top"><span id="status">待开始</span><span id="view">推荐：侧面 / 45°</span></div><div class="stage-bottom"><span id="provider">LOCAL ONNX</span><span id="multi"></span></div></section>
 <aside><div class="section-label">LIVE SESSION <span id="set">SET 01</span></div><label for="exercise">训练动作</label><select id="exercise"></select><label for="sensitivity">计数灵敏度</label><select id="sensitivity"><option value="easy">宽松（推荐）</option><option value="sensitive">更灵敏（可能多计）</option><option value="standard">标准</option><option value="calibrated" hidden>按我的动作校准</option></select><details class="rule-reference" id="ruleReference"><summary>查看当前动作的判定依据</summary><div id="ruleGuide"></div></details><div class="calibration"><strong>按你的动作校准</strong><p>先保持起始姿势约 1 秒并记录，再保持动作另一端约 1 秒并记录。完成后重复一遍即可测试计数。</p><div class="calibration-actions"><button type="button" id="captureStart">记录起始姿势</button><button type="button" id="captureEnd">记录动作另一端</button><button type="button" id="clearCalibration">恢复默认</button></div><p id="calibrationStatus" role="status">尚未校准；可直接使用默认规则。</p></div><div class="phase"><small>动作阶段</small><strong id="phase">待开始</strong></div><div class="numbers"><div><small id="countLabel">完成次数</small><strong id="count">0</strong></div><div><small>最近评分</small><strong id="score">—</strong></div></div><div class="scorebar"><i id="scorebar"></i></div><p class="muted" id="average">本组平均 —</p><div class="goal"><div id="goalStatus" aria-live="polite">本组目标 0 / 10 次</div><div class="goalbar"><i id="goalbar"></i></div></div><div class="feedback"><span>检测进度</span><div id="checks" aria-live="polite">摄像头 · 人体 · 关键关节 · 起始姿势</div><span>实时检测</span><p id="tracking">开启摄像头后显示人体识别与动作角度</p><span>动作提示</span><p id="feedback">先选择动作，并参考推荐视角摆放摄像头。</p></div><div class="metrics"><div>摄像头 <b id="cameraFps">—</b></div><div>姿态推理 <b id="poseFps">—</b></div><div>画面刷新 <b id="uiFps">—</b></div><div>推理耗时 <b id="latency">—</b></div><div>质量时长 <b id="quality">—</b></div><div>开合跳频率 <b id="frequency">—</b></div></div></aside></div>
 <div class="toolbar"><div><button id="start" class="primary">开启摄像头</button><button id="pause" disabled>暂停</button><button id="reset">重置当前动作</button><button id="end">结束本组</button><button id="newWorkout">新训练</button></div><div><label>语音 <select id="voice"><option value="mute">关闭</option><option value="single">每次反馈</option><option value="batch">每 5 次</option></select></label><select id="language" aria-label="语音语言"><option value="zh-CN">中文</option><option value="en-US">English</option></select><label class="check"><input type="checkbox" id="debug">调试</label><button id="export">导出 JSON</button><button id="exportCsv">导出 CSV</button><button id="exportDiagnostic">下载检测诊断</button></div></div>
-<details><summary>视频测试与训练记录</summary><p>选择本机视频进行测试。文件只在当前浏览器中解码。自动识别是保守实验模式，先做一次明显的动作供系统判断；无法确定时请手动选择。</p><input id="file" type="file" accept="video/*"><div id="history">暂无已完成组</div></details><pre id="debugInfo" hidden></pre><footer>辅助动作评价，不用于医疗诊断。二维投影与遮挡会影响结果；评分阈值尚需真人数据校准。九动作依据项目几何规则，非经真人数据验证的标准动作库。模型就绪后可断网使用。</footer></main><script src="vendor/ort.min.js?v=20260928b"></script><script type="module" src="app.js?v=20260928b"></script></body></html>
+<details><summary>视频测试与训练记录</summary><p>选择本机视频进行测试。文件只在当前浏览器中解码。自动识别是保守实验模式，先做一次明显的动作供系统判断；无法确定时请手动选择。</p><input id="file" type="file" accept="video/*"><div id="history">暂无已完成组</div></details><pre id="debugInfo" hidden></pre><footer>辅助动作评价，不用于医疗诊断。二维投影与遮挡会影响结果；评分阈值尚需真人数据校准。九动作依据项目几何规则，非经真人数据验证的标准动作库。模型就绪后可断网使用。</footer></main><script src="vendor/ort.min.js?v=20260928b"></script><script src="ui-tools.js?v=1"></script><script type="module" src="app.js?v=20260928b"></script></body></html>
